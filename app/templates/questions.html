@@ -1,0 +1,14 @@
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block navbar %}
+<div class="navbar navbar-fixed-top">
+  <!-- ... -->
+</div>
+{% endblock %}
+{% block content %}
+<h2>Welcome {{ user.get("name") }}!</h2>
+    <form action="" method="post" novalidate>
+        {{ form.hidden_tag() }}
+        {{ wtf.quick_form(form) }}
+    </form>
+{% endblock %}

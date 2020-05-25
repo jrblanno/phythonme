@@ -1,31 +1,32 @@
-import uuid
-import requests
-from config import Config
+import uuid , requests
+from config import Config # importing from module "config"  class "Config"
 from flask import render_template, flash, redirect , url_for, session, request
 from flask_session import Session
-from app import app
+from app.forms import  QuestionsForm # importing from module "forms" class 
+from flask_bootstrap import Bootstrap
+#from app.azuretables import azuretabla
 import msal
 import config
-
-# from app.forms import  QuestionsForm
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     form =  QuestionsForm()
-#     if form.validate_on_submit():
-#         flash('Login requested for user {}, remember_me={}'.format(
-#             form.username.data, form.remember_me.data))
-#         return redirect(url_for('index'))
-#     return render_template('login.html', title='Questionnaire', form=form)
-
+from werkzeug.middleware.proxy_fix import ProxyFix
+from app import app
 app.config.from_object(config)
 Session(app)
+Bootstrap(app)
 
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-@app.route("/")
+@app.route("/", methods=['GET', 'POST'])
 def index():
     if not session.get("user"):
         return redirect(url_for("login"))
-    return render_template('index.html', user=session["user"], version=msal.__version__)
+    form =  QuestionsForm()
+    if form.validate_on_submit():
+        return redirect(url_for('ok'))
+    return render_template('questions.html', title='Questionnaire', form=form,user=session["user"])
+
+@app.route("/ok")
+def ok():
+    return "<h1>hi</h1>"
 
 @app.route("/login")
 def login():
@@ -33,7 +34,9 @@ def login():
     # Technically we could use empty list [] as scopes to do just sign in,
     # here we choose to also collect end user consent upfront
     auth_url = _build_auth_url(scopes=config.SCOPE, state=session["state"])
-    return render_template("login.html", auth_url=auth_url, version=msal.__version__)
+    #return auth_url
+    return redirect(auth_url)
+    #return render_template("login.html", auth_url=auth_url, version=msal.__version__)
 
 @app.route(config.REDIRECT_PATH)  # Its absolute URL must match your app's redirect_uri set in AAD
 def authorized():
@@ -102,7 +105,7 @@ def _get_token_from_cache(scope=None):
         _save_cache(cache)
         return result
 
-app.jinja_env.globals.update(_build_auth_url=_build_auth_url)  # Used in template
+#app.jinja_env.globals.update(_build_auth_url=_build_auth_url)  # Used in template
 
 if __name__ == "__main__":
     app.run()
